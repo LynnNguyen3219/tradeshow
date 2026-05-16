@@ -10,35 +10,18 @@
 <div class="title-bar">
 ☆ Draw Your Own Perfect Pencil! ☆
 </div>
-
 <div class="whiteboard-container">
 <div class="toolbar">
 <button id="penButton" class="tool">Draw</button>
 <button id="eraserButton" class="tool">Erase</button>
-<input 
-type="color" 
-id="colorPicker" 
-class="tool" 
-value="#000000">
-<input 
-type="range" 
-id="brushSize" 
-min="1" 
-max="20" 
-value="5" 
-class="tool">
+<input type="color" id="colorPicker" class="tool" value="#000000">
+<input type="range" id="brushSize" min="1" max="20" value="5" class="tool">
 <button id="clearButton" class="tool clear-btn">Clear</button>
 </div>
-
 <div class="email-section">
-<input 
-type="email" 
-id="userEmail"
-placeholder="Enter your email"
-required>
+<input type="email" id="userEmail" placeholder="Enter your email" required>
 <button id="submitButton" class="tool submit-btn">Submit Drawing</button>
 </div>
-
 <canvas id="whiteboard"></canvas>
 </div>
 
@@ -49,19 +32,18 @@ flex-direction:column;
 align-items:center;
 padding-top:30px;
 background:#f5f5f5;
-font-family:'Arial', sans-serif;
+font-family:Arial, sans-serif;
 }
 .title-bar{
 width:500px;
-margin:0 auto 15px auto;
+margin:0 auto 15px;
 padding:12px;
 text-align:center;
 font-size:20px;
 font-weight:bold;
-background:#ffffff;
+background:#fff;
 border-radius:12px;
 box-shadow:0 0 10px rgba(0,0,0,0.1);
-box-sizing:border-box;
 }
 .whiteboard-container{
 background:white;
@@ -70,7 +52,6 @@ border-radius:12px;
 box-shadow:0 0 10px rgba(0,0,0,0.1);
 width:500px;
 box-sizing:border-box;
-overflow:hidden;
 }
 .toolbar{
 display:flex;
@@ -79,8 +60,6 @@ margin-bottom:10px;
 flex-wrap:wrap;
 justify-content:center;
 align-items:center;
-width:100%;
-box-sizing:border-box;
 }
 canvas{
 width:100%;
@@ -88,7 +67,6 @@ height:500px;
 border:2px solid black;
 touch-action:none;
 background:white;
-box-sizing:border-box;
 display:block;
 }
 .tool{
@@ -98,14 +76,12 @@ cursor:pointer;
 .email-section{
 display:flex;
 gap:10px;
-margin-bottom:15px;
-margin-top:10px;
+margin:10px 0 15px;
 }
 #userEmail{
 flex:1;
 padding:10px;
 font-size:16px;
-box-sizing:border-box;
 }
 .submit-btn{
 padding:10px;
@@ -114,17 +90,26 @@ font-size:16px;
 </style>
 
 <script>
-emailjs.init({
-publicKey: "boT8hmXBZif-IykOd",
-});
-const canvas = document.getElementById('whiteboard');
-const ctx = canvas.getContext('2d');
-canvas.width = 500;
-canvas.height = 500;
+emailjs.init("boT8hmXBZif-IykOd");
+const canvas = document.getElementById("whiteboard");
+const ctx = canvas.getContext("2d");
+function resizeCanvas() {
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 let painting = false;
-let brushColor = '#000000';
+let brushColor = "#000000";
 let brushSize = 5;
 let isErasing = false;
+function getPos(e) {
+const rect = canvas.getBoundingClientRect();
+return {
+x: e.clientX - rect.left,
+y: e.clientY - rect.top
+};
+}
 function startPainting(e) {
 painting = true;
 draw(e);
@@ -135,95 +120,68 @@ ctx.beginPath();
 }
 function draw(e) {
 if (!painting) return;
+const pos = getPos(e);
 ctx.lineWidth = brushSize;
-ctx.lineCap = 'round';
-ctx.strokeStyle = isErasing 
-? '#ffffff' 
-: brushColor;
-const rect = canvas.getBoundingClientRect();
-const x = e.clientX - rect.left;
-const y = e.clientY - rect.top;
-ctx.lineTo(x, y);
+ctx.lineCap = "round";
+ctx.strokeStyle = isErasing ? "#ffffff" : brushColor;
+ctx.lineTo(pos.x, pos.y);
 ctx.stroke();
 ctx.beginPath();
-ctx.moveTo(x, y);
+ctx.moveTo(pos.x, pos.y);
 }
-document.getElementById('penButton').addEventListener('click', () => {
-isErasing = false;
-});
-document.getElementById('eraserButton').addEventListener('click', () => {
-isErasing = true;
-});
-document.getElementById('colorPicker').addEventListener('input', (e) => {
+document.getElementById("penButton").onclick = () => isErasing = false;
+document.getElementById("eraserButton").onclick = () => isErasing = true;
+
+document.getElementById("colorPicker").oninput = (e) => {
 brushColor = e.target.value;
-});
-document.getElementById('brushSize').addEventListener('input', (e) => {
+};
+document.getElementById("brushSize").oninput = (e) => {
 brushSize = e.target.value;
-});
-document.getElementById('clearButton').addEventListener('click', () => {
+};
+document.getElementById("clearButton").onclick = () => {
 ctx.clearRect(0, 0, canvas.width, canvas.height);
-});
-document.getElementById('submitButton').addEventListener('click', () => {
-const userEmail = document
-.getElementById('userEmail')
-.value
-.trim();
-if(userEmail === ""){
-alert("Please enter your email first! >:(");
-return;
-}
+};
+document.getElementById("submitButton").onclick = () => {
+const userEmail = document.getElementById("userEmail").value.trim();
+if (!userEmail) return alert("Please enter your email first! >:(");
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-if(!emailPattern.test(userEmail)){
-alert("Please enter a valid email! >:(");
-return;
-}
+if (!emailPattern.test(userEmail)) return alert("Please enter a valid email! >:(");
 const imageData = canvas.toDataURL("image/png");
-emailjs.send(
-"service_e8dvjjr",
-"template_22s7a18",
-{
+emailjs.send("service_e8dvjjr", "template_22s7a18", {
 user_email: userEmail,
 drawing: imageData
-}
-)
+})
 .then(() => {
-alert(
-"Drawing submitted successfully!! We will reach out to you soon! :)"
-);
-document.getElementById('userEmail').value = "";
+alert("Drawing submitted successfully!! We will reach out to you soon! :)");
+document.getElementById("userEmail").value = "";
 })
 .catch((error) => {
 console.error(error);
-alert
-"Failed to send drawing, please try again. :("
-);
+alert("Failed to send drawing, please try again. :(");
 });
-});
-canvas.addEventListener('mousedown', startPainting);
-canvas.addEventListener('mouseup', stopPainting);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('touchstart', (e) => {
+};
+canvas.addEventListener("mousedown", startPainting);
+canvas.addEventListener("mouseup", stopPainting);
+canvas.addEventListener("mousemove", draw);
+canvas.addEventListener("touchstart", (e) => {
 e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousedown', {
-clientX: touch.clientX,
-clientY: touch.clientY
+const t = e.touches[0];
+canvas.dispatchEvent(new MouseEvent("mousedown", {
+clientX: t.clientX,
+clientY: t.clientY
+}));
 });
-canvas.dispatchEvent(mouseEvent);
-});
-canvas.addEventListener('touchend', (e) => {
+canvas.addEventListener("touchend", (e) => {
 e.preventDefault();
-const mouseEvent = new MouseEvent('mouseup');
-canvas.dispatchEvent(mouseEvent);
+canvas.dispatchEvent(new MouseEvent("mouseup"));
 });
-canvas.addEventListener('touchmove', (e) => {
+canvas.addEventListener("touchmove", (e) => {
 e.preventDefault();
-const touch = e.touches[0];
-const mouseEvent = new MouseEvent('mousemove', {
-clientX: touch.clientX,
-clientY: touch.clientY
-});
-canvas.dispatchEvent(mouseEvent);
+const t = e.touches[0];
+canvas.dispatchEvent(new MouseEvent("mousemove", {
+clientX: t.clientX,
+clientY: t.clientY
+}));
 });
 </script>
 </body>
